@@ -1,0 +1,22 @@
+{
+    // ---- PHP Intelephense (Ben Mewburn) ----
+    // We require_once includes/helpers.php in every page, but Intelephense
+    // sometimes fails to resolve those functions from one file to another.
+    // Turn off its "undefined function" warning so it stops flagging
+    // helpers (e, csrf_field, flash_set, etc.) as undefined.
+    "intelephense.diagnostics.undefinedFunctions": false,
+    "intelephense.diagnostics.undefinedSymbols": false,
+
+    // ---- DEVSENSE PHP Tools (source: "PHP", codes PHP0xxx) ----
+    // Same problem from a different extension. Excluding the relevant
+    // error codes so the Problems tab stops listing them.
+    "php.problems.exclude": {
+        "**/*.php": ["PHP0417", "PHP0413"]
+    },
+
+    // ---- Built-in PHP Language Features ----
+    // Stop the built-in extension from re-validating files Intelephense
+    // already handles. Eliminates duplicate squiggles.
+    "php.suggest.basic": false,
+    "php.validate.enable": false
+}
