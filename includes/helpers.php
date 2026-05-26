@@ -10,7 +10,7 @@ declare(strict_types=1);
 // SHORTCUT for htmlspecialchars().
 // Every time we print user-supplied text into HTML we must escape it
 // so that characters like <, >, " can't break our HTML or run scripts.
-// Usage: <?= e($student['fullname']) ?>
+// Usage in a template: print escaped output by calling e($name) inside short-echo tags.
 function e(?string $value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
