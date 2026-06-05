@@ -100,6 +100,8 @@ h1, h2, h3 { margin-top: 0; }
 .btn-secondary { background: #64748b; }
 .btn-secondary:hover { background: #475569; }
 .btn-sm { padding: 4px 10px; font-size: 0.85rem; }
+.btn-grades { background: #16a34a; }   /* green so it stands out from Edit/Delete */
+.btn-grades:hover { background: #15803d; }
 table {
     width: 100%;
     border-collapse: collapse;
@@ -155,9 +157,65 @@ tr:hover td { background: #fafbfc; }
 .badge-present { background: #d1fae5; color: #065f46; }
 .badge-absent  { background: #fee2e2; color: #991b1b; }
 .badge-late    { background: #fef3c7; color: #92400e; }
+/* ===== RESPONSIVE: TABLETS (768px and below) ===== */
+@media (max-width: 768px) {
+    .container { padding: 0 12px; margin: 16px auto; }
+    .card { padding: 18px; }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.25rem; }
+    .stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .stat-card .num { font-size: 1.6rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 8px; }
+}
+
+/* ===== RESPONSIVE: PHONES (640px and below) ===== */
 @media (max-width: 640px) {
-    .topbar { flex-direction: column; align-items: flex-start; }
-    .nav { width: 100%; }
-    table { font-size: 0.85rem; }
-    th, td { padding: 8px 6px; }
+    body { font-size: 14px; }
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 16px;
+    }
+    .nav {
+        width: 100%;
+        gap: 10px;
+        font-size: 0.85rem;
+    }
+    .nav a { padding: 4px 0; }
+    .nav-user { display: none; }
+    .btn-logout { margin-left: auto; }
+
+    .stats { grid-template-columns: 1fr; }
+    .login-wrap { margin: 30px auto; padding: 0 16px; max-width: 100%; }
+
+    .searchbar { flex-direction: column; }
+    .searchbar input,
+    .searchbar select,
+    .searchbar button,
+    .searchbar a { width: 100%; }
+
+    /* Tables get a horizontal scroll on phones so columns stay readable */
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        font-size: 0.85rem;
+    }
+    th, td { padding: 8px 10px; }
+    .actions {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .form-group input,
+    .form-group select { font-size: 16px; /* stops iOS auto-zoom on focus */ }
+}
+
+/* ===== RESPONSIVE: TINY PHONES (380px and below) ===== */
+@media (max-width: 380px) {
+    .card { padding: 12px; }
+    .nav { font-size: 0.8rem; gap: 8px; }
+    .btn { padding: 6px 12px; font-size: 0.9rem; }
+    .stat-card .num { font-size: 1.4rem; }
 }

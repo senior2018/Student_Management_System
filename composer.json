@@ -1,0 +1,10 @@
+{
+    "name": "senior/student-management-system",
+    "description": "Web-based Student Management System using PHP and MySQL",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "dompdf/dompdf": "^3.0",
+        "phpmailer/phpmailer": "^6.9"
+    }
+}

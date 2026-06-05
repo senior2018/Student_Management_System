@@ -1,17 +1,14 @@
 <?php
-// ====================================================================
-// SHARED HEADER
-// Included at the top of every page so the layout (nav bar, alerts,
-// CSS link) stays consistent. Pages set $pageTitle, then include this.
-// ====================================================================
- 
+// Shared header — added to the top of every page so the nav bar and
+// layout are the same everywhere. Each page sets $pageTitle before including this.
+
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
-// If the page didn't set a title, fall back to a default.
+// Default title if the page didn't pick one
 $pageTitle = $pageTitle ?? 'Student Management System';
 
-// Grab the current user (or null) so we can show their name in the nav.
+// Get the logged-in user so we can show their name in the nav
 $user = current_user();
 ?>
 <!DOCTYPE html>
@@ -24,18 +21,19 @@ $user = current_user();
 </head>
 <body>
 
-<!-- Top navigation bar -->
+<!-- Top nav bar -->
 <header class="topbar">
     <div class="brand"><a href="dashboard.php">SMS Admin</a></div>
 
     <?php if ($user): ?>
-    <!-- Only show the menu when the user is logged in -->
+    <!-- Only show menu when someone is logged in -->
     <nav class="nav">
         <a href="dashboard.php">Dashboard</a>
         <a href="view_students.php">Students</a>
         <a href="add_student.php">Add Student</a>
         <a href="attendance.php">Attendance</a>
         <a href="view_attendance.php">Records</a>
+        <a href="report.php" target="_blank">PDF Report</a>
         <span class="nav-user">Hi, <?= e($user['username']) ?></span>
         <a class="btn-logout" href="logout.php">Logout</a>
     </nav>
@@ -45,8 +43,8 @@ $user = current_user();
 <main class="container">
 
 <?php
-// Show flash messages (set by other pages right before redirecting here).
-// flash_get() returns the message AND clears it, so it only appears once.
+// Show any flash messages (set right before a redirect happens).
+// flash_get() returns the message AND removes it, so it only shows once.
 ?>
 <?php if ($msg = flash_get('success')): ?>
     <div class="alert alert-success"><?= e($msg) ?></div>

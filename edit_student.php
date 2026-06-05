@@ -1,25 +1,23 @@
 <?php
-// ====================================================================
-// EDIT STUDENT (the "U" in CRUD — Update)
-// 1. GET with ?id=N → load the student and show the form prefilled
-// 2. POST → validate the new values and UPDATE the row
-// ====================================================================
- 
+// Edit Student page (the U in CRUD = Update).
+// 1. GET with ?id=N → load the student and fill the form
+// 2. POST → check the input and save the changes
+
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/helpers.php';
 require_login();
 
-// Pull the id either from the URL (?id=…) on GET, or from the form on POST.
-// We cast to int — that alone makes SQL injection through the id impossible.
+// Get the id either from the URL (?id=...) or the form post.
+// (int) makes it a number — that alone makes SQL injection through id impossible.
 $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 if ($id <= 0) {
     flash_set('error', 'Invalid student ID.');
     header('Location: view_students.php');
     exit;
 }
- 
-// Load the existing student. If not found, bail back to the list.
+
+// Load the existing student. If not found, go back to the list.
 $stmt = db()->prepare('SELECT * FROM students WHERE id = :id');
 $stmt->execute([':id' => $id]);
 $student = $stmt->fetch();
@@ -30,7 +28,7 @@ if (!$student) {
     exit;
 }
 
-// Pre-fill the form with the student's current values.
+// Fill the form with the student's current values
 $errors = [];
 $data = [
     'fullname' => $student['fullname'],
@@ -40,19 +38,22 @@ $data = [
     'phone'    => $student['phone'],
 ];
 
-// Handle the form submission
+// Did they submit the form?
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
 
-    // Validate the submitted values; overwrite $data with the cleaned versions
+    // Check the input. Replace $data with cleaned values.
     [$errors, $data] = validate_student($_POST);
 
     if (!$errors) {
         try {
-            // UPDATE the row identified by :id
+            // Handle a new photo upload (keeps the old one if no file)
+            $photo = handle_photo_upload($_FILES['photo'] ?? null, $student['photo'] ?? null);
+
+            // Update the row
             $stmt = db()->prepare(
                 'UPDATE students SET fullname=:fullname, gender=:gender, course=:course,
-                 email=:email, phone=:phone WHERE id=:id'
+                 email=:email, phone=:phone, photo=:photo WHERE id=:id'
             );
             $stmt->execute([
                 ':fullname' => $data['fullname'],
@@ -60,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':course'   => $data['course'],
                 ':email'    => $data['email'],
                 ':phone'    => $data['phone'],
+                ':photo'    => $photo,
                 ':id'       => $id,
             ]);
 
@@ -67,12 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: view_students.php');
             exit;
 
+        } catch (RuntimeException $e) {
+            $errors['photo'] = $e->getMessage();
         } catch (PDOException $e) {
-            // 23000 = duplicate email (UNIQUE constraint hit)
+            // 23000 = duplicate email
             if ($e->getCode() === '23000') {
                 $errors['email'] = 'Another student is already using this email.';
             } else {
-                $errors['_db'] = 'Could not update student. Please try again.';
+                $errors['_db'] = 'Could not update the student. Please try again.';
             }
         }
     }
@@ -89,9 +93,9 @@ include __DIR__ . '/partials/header.php';
         <div class="alert alert-error"><?= e($errors['_db']) ?></div>
     <?php endif; ?>
 
-    <form method="post" action="edit_student.php">
+    <form method="post" action="edit_student.php" enctype="multipart/form-data">
         <?= csrf_field() ?>
-        <!-- Pass the id back so the POST handler knows which row to update -->
+        <!-- Send the id along so we know which row to update -->
         <input type="hidden" name="id" value="<?= (int) $id ?>">
 
         <div class="form-group">
@@ -126,6 +130,15 @@ include __DIR__ . '/partials/header.php';
             <label for="phone">Phone</label>
             <input id="phone" name="phone" type="text" required value="<?= e($data['phone']) ?>">
             <?php if (!empty($errors['phone'])): ?><div class="error"><?= e($errors['phone']) ?></div><?php endif; ?>
+        </div>
+
+        <div class="form-group">
+            <label>Current photo</label>
+            <!-- Shows the current photo or a placeholder -->
+            <img src="<?= e(photo_url($student['photo'] ?? null)) ?>" alt="" style="width:80px;height:80px;border-radius:8px;object-fit:cover;display:block;margin-bottom:8px;">
+            <label for="photo">Replace photo (optional, JPG/PNG/GIF/WebP, max 2 MB)</label>
+            <input id="photo" name="photo" type="file" accept="image/*">
+            <?php if (!empty($errors['photo'])): ?><div class="error"><?= e($errors['photo']) ?></div><?php endif; ?>
         </div>
 
         <button class="btn" type="submit">Save Changes</button>

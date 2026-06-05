@@ -1,47 +1,34 @@
 <?php
-// ====================================================================
-// AUTHENTICATION HELPERS
-// Functions for sessions, login, logout, and protecting pages so that
-// only logged-in users can see them.
-// ====================================================================
- 
-declare(strict_types=1);
+// Login / logout helpers.
+// Has functions to check if someone is logged in, log them in, log them out.
 
-// A session lets us remember the user across page loads.
-// session_start() must be called BEFORE any HTML is sent.
-// We check the current status first to avoid the "session already started"
-// warning if some other file already started it.
+// Start the session (so we can remember the user across pages).
+// We check first to avoid the "session already started" warning.
 if (session_status() === PHP_SESSION_NONE) {
-    // Configure the session cookie:
-    //   httponly = JavaScript can't read it (protects against XSS-based theft)
-    //   samesite = browser only sends it on same-site requests (protects against CSRF)
     session_set_cookie_params([
-        'lifetime' => 0,        // 0 = cookie lasts only until the browser closes
-        'httponly' => true,
-        'samesite' => 'Lax',
+        'lifetime' => 0,         // 0 = cookie lasts until browser closes
+        'httponly' => true,      // JavaScript can't read it (safer)
+        'samesite' => 'Lax',     // browser only sends it on same-site requests
     ]);
     session_start();
 }
 
-// Returns true if a user_id is stored in the session = someone is logged in.
-function is_logged_in(): bool
-{
+// Is someone logged in right now?
+function is_logged_in() {
     return !empty($_SESSION['user_id']);
 }
 
-// Used at the top of any page that should be private (e.g. dashboard).
-// If the user is NOT logged in, send them to login.php and stop the page.
-function require_login(): void
-{
+// Use this at the top of any page that should be private.
+// If the user isn't logged in, send them to the login page.
+function require_login() {
     if (!is_logged_in()) {
         header('Location: login.php');
         exit;
     }
 }
 
-// Returns the current user as an array, or null if no one is logged in.
-function current_user(): ?array
-{
+// Get the current user (or null if not logged in)
+function current_user() {
     if (!is_logged_in()) {
         return null;
     }
@@ -51,27 +38,22 @@ function current_user(): ?array
     ];
 }
 
-// Call this after we've confirmed a username/password is correct.
-function login_user(array $user): void
-{
-    // Generate a brand-new session ID and delete the old one.
-    // This prevents "session fixation" attacks where an attacker tries
-    // to set your session ID to something they already know.
+// Call this after we confirmed the username/password are right
+function login_user($user) {
+    // Make a fresh session ID (safer — prevents session fixation attacks)
     session_regenerate_id(true);
 
-    // Save the user's ID and name into the session so other pages know
-    // who is logged in. We store as little as possible — never the password.
+    // Save the user info into the session
     $_SESSION['user_id']  = (int) $user['id'];
     $_SESSION['username'] = $user['username'];
 }
 
-// Wipe the session and delete its cookie completely.
-function logout_user(): void
-{
-    // Clear every value stored in $_SESSION
+// Wipe the session and delete its cookie
+function logout_user() {
+    // Clear everything in the session
     $_SESSION = [];
 
-    // Also delete the session cookie on the user's browser
+    // Also delete the cookie on the user's browser
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
         setcookie(session_name(), '', time() - 42000,
@@ -80,6 +62,6 @@ function logout_user(): void
         );
     }
 
-    // Destroy the session data on the server
+    // Destroy the session on the server
     session_destroy();
 }

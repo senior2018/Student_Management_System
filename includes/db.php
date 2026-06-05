@@ -1,62 +1,35 @@
 <?php
-// ====================================================================
-// DATABASE CONNECTION
-// Provides the db() function. Any file that calls db() gets a PDO
-// object connected to the MySQL database from config.php.
-// ====================================================================
- 
-// 'declare(strict_types=1)' makes PHP strict about argument types — if
-// a function expects a string but gets an int, PHP throws an error
-// instead of silently converting. Helps catch bugs.
-declare(strict_types=1);
+// This file connects us to the MySQL database.
+// Any other file that needs the database just calls db() to get the connection.
 
-// We define a single function db() that returns a PDO connection.
-function db(): PDO
-{
-    // 'static' means $pdo is remembered between calls to this function.
-    // First call: $pdo is null → we create the connection.
-    // Later calls: $pdo already exists → we just return it.
-    // This way we connect to MySQL only ONCE per page load (faster).
+function db() {
+    // We remember the connection in this static variable, so we only
+    // connect once even if db() is called many times in the same page.
     static $pdo = null;
-    if ($pdo instanceof PDO) {
+    if ($pdo) {
         return $pdo;
     }
 
-    // Find the config file (same folder as this db.php)
+    // Load the config file (which has our DB password)
     $configPath = __DIR__ . '/config.php';
     if (!file_exists($configPath)) {
-        http_response_code(500);   // tell browser: "server error"
-        die('Missing includes/config.php — copy includes/config.example.php to includes/config.php and set your DB credentials.');
+        die('Missing includes/config.php. Copy includes/config.example.php to includes/config.php and add your password.');
     }
-
-    // Load the config array from config.php
     $config = require $configPath;
     $db = $config['db'];
 
-    // Build the DSN (Data Source Name) string — it tells PDO what to connect to.
-    // sprintf() fills in placeholders (%s = string, %d = number).
-    $dsn = sprintf(
-        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-        $db['host'],
-        $db['port'],
-        $db['name'],
-        $db['charset']
-    );
+    // Build the DSN string — this tells PDO how to connect
+    $dsn = "mysql:host={$db['host']};port={$db['port']};dbname={$db['name']};charset={$db['charset']}";
 
-    // try/catch lets us handle connection errors gracefully instead of crashing.
     try {
+        // Make the actual connection
         $pdo = new PDO($dsn, $db['user'], $db['password'], [
-            // Throw exceptions on errors (easier to debug than silent failures)
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            // Default fetch mode: return rows as associative arrays (column-name → value)
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            // Use REAL prepared statements (more secure than emulated ones)
-            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,  // throw error on problems
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,        // give us results by column name
+            PDO::ATTR_EMULATE_PREPARES   => false,                   // use real prepared statements
         ]);
     } catch (PDOException $e) {
-        http_response_code(500);
-        // Escape the error before printing — never trust any string going to HTML
-        die('Database connection failed: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'));
+        die('Database connection failed: ' . htmlspecialchars($e->getMessage()));
     }
 
     return $pdo;

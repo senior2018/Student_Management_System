@@ -1,51 +1,47 @@
 <?php
-// ====================================================================
-// VIEW ATTENDANCE RECORDS
-// Browse past attendance with three optional filters:
-//   from date, to date, specific student.
+// View Attendance Records page.
+// Lets you browse past attendance with three filters:
+//   from date, to date, and one specific student (optional).
 // Defaults: from = first day of this month, to = today.
-// ====================================================================
- 
+
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/helpers.php';
 require_login();
 
-// Read filters from the URL. If missing, use sensible defaults.
-$from = $_GET['from'] ?? date('Y-m-01');    // first day of current month
+// Read the filters from the URL. Use sensible defaults if missing.
+$from = $_GET['from'] ?? date('Y-m-01');    // first day of this month
 $to   = $_GET['to']   ?? date('Y-m-d');     // today
 $studentId = (int) ($_GET['student_id'] ?? 0);   // 0 = all students
 
-// Make sure both dates LOOK like YYYY-MM-DD. If not, fall back to today.
-// This protects us before we put the values into a SQL query.
+// Make sure the dates look like YYYY-MM-DD. If not, use today.
 foreach (['from', 'to'] as $k) {
-    // $$k is a "variable variable" — same as $from / $to depending on $k
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $$k)) {
         $$k = date('Y-m-d');
     }
 }
- 
-// Build the query in pieces so we can add the student filter conditionally.
-// JOIN pulls the student's name from the students table.
+
+// Build the SQL in pieces so we can add the student filter only if needed.
+// JOIN gets the student's name from the students table.
 $sql = 'SELECT a.id, a.attend_date, a.status, s.id AS student_id, s.fullname, s.course
         FROM attendance a
         JOIN students s ON s.id = a.student_id
         WHERE a.attend_date BETWEEN :from AND :to';
 $params = [':from' => $from, ':to' => $to];
 
-// Only add the student filter if one was chosen
+// Add student filter only if one was picked
 if ($studentId > 0) {
     $sql .= ' AND s.id = :sid';
     $params[':sid'] = $studentId;
 }
 $sql .= ' ORDER BY a.attend_date DESC, s.fullname ASC';
 
-// Prepare + execute. Prepared statements + named params = safe.
+// Run the query (prepared = safe)
 $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
-// Also load all students so we can build the dropdown filter
+// Also load all students for the dropdown filter
 $students = db()->query('SELECT id, fullname FROM students ORDER BY fullname')->fetchAll();
 
 $pageTitle = 'Attendance Records';
@@ -55,7 +51,7 @@ include __DIR__ . '/partials/header.php';
 <h1>Attendance Records</h1>
 
 <div class="card">
-    <!-- Filter form (GET so filters show up in the URL and can be bookmarked) -->
+    <!-- Filter form (GET so the filters show up in the URL) -->
     <form method="get" action="view_attendance.php" class="searchbar">
         <label style="align-self:center;">From:</label>
         <input type="date" name="from" value="<?= e($from) ?>">
@@ -84,7 +80,7 @@ include __DIR__ . '/partials/header.php';
         </thead>
         <tbody>
         <?php foreach ($rows as $r):
-            // Build the CSS class name dynamically: badge-present / badge-absent / badge-late
+            // Build CSS class name like badge-present / badge-absent / badge-late
             $cls = 'badge-' . strtolower($r['status']);
         ?>
             <tr>
