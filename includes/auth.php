@@ -1,67 +1,55 @@
 <?php
-// Login / logout helpers.
-// Has functions to check if someone is logged in, log them in, log them out.
+// Authentication helpers — session, login check, CSRF, output escape.
+// Every page should include this file at the top.
 
-// Start the session (so we can remember the user across pages).
-// We check first to avoid the "session already started" warning.
+// Start the session (only if it's not already started)
 if (session_status() === PHP_SESSION_NONE) {
-    session_set_cookie_params([
-        'lifetime' => 0,         // 0 = cookie lasts until browser closes
-        'httponly' => true,      // JavaScript can't read it (safer)
-        'samesite' => 'Lax',     // browser only sends it on same-site requests
-    ]);
     session_start();
 }
 
-// Is someone logged in right now?
-function is_logged_in() {
-    return !empty($_SESSION['user_id']);
-}
 
-// Use this at the top of any page that should be private.
-// If the user isn't logged in, send them to the login page.
+// Check if the user is logged in. If not, send to login page.
+// Put this at the top of any page that should be private.
 function require_login() {
-    if (!is_logged_in()) {
-        header('Location: login.php');
+    if (!isset($_SESSION['user_id'])) {
+        header("Location: login.php");
         exit;
     }
 }
 
-// Get the current user (or null if not logged in)
-function current_user() {
-    if (!is_logged_in()) {
-        return null;
-    }
-    return [
-        'id'       => $_SESSION['user_id'],
-        'username' => $_SESSION['username'] ?? '',
-    ];
+
+// Shortcut for htmlspecialchars() — safely print user data into HTML.
+// Stops people from sneaking in HTML/JavaScript (XSS attacks).
+// Use it in templates by calling e($name) inside a PHP echo tag.
+function e($value) {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-// Call this after we confirmed the username/password are right
-function login_user($user) {
-    // Make a fresh session ID (safer — prevents session fixation attacks)
-    session_regenerate_id(true);
 
-    // Save the user info into the session
-    $_SESSION['user_id']  = (int) $user['id'];
-    $_SESSION['username'] = $user['username'];
+// ===== CSRF protection =====
+// CSRF = "Cross-Site Request Forgery". Stops attackers from tricking
+// a logged-in user into submitting forms from another website.
+// We add a secret token to every form. On submit, we check that the
+// token matches what's saved in the session.
+
+// Get the current CSRF token (or make one on first use)
+function csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
 }
 
-// Wipe the session and delete its cookie
-function logout_user() {
-    // Clear everything in the session
-    $_SESSION = [];
+// Hidden form field with the token.
+// Put this inside every form by echoing csrf_field() in a PHP tag.
+function csrf_field() {
+    return '<input type="hidden" name="csrf_token" value="' . csrf_token() . '">';
+}
 
-    // Also delete the cookie on the user's browser
-    if (ini_get('session.use_cookies')) {
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000,
-            $params['path'], $params['domain'],
-            $params['secure'], $params['httponly']
-        );
+// Call this at the top of every form handler.
+// If the token doesn't match, kill the request.
+function csrf_check() {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== ($_SESSION['csrf_token'] ?? '')) {
+        die("Invalid CSRF token. Please go back and try again.");
     }
-
-    // Destroy the session on the server
-    session_destroy();
 }

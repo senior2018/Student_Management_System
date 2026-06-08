@@ -1,9 +1,10 @@
 <?php
-// Logout — kill the session and go back to login
+// Logout — wipe the session and go back to login
 
-require_once __DIR__ . '/includes/auth.php';
+require "includes/auth.php";
 
-logout_user();
+$_SESSION = [];
+session_destroy();
 
-header('Location: login.php');
+header("Location: login.php");
 exit;

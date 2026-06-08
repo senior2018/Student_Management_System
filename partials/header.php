@@ -1,32 +1,23 @@
 <?php
-// Shared header — added to the top of every page so the nav bar and
-// layout are the same everywhere. Each page sets $pageTitle before including this.
+// Shared header — included at the top of every page after login
 
-require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../includes/helpers.php';
-
-// Default title if the page didn't pick one
 $pageTitle = $pageTitle ?? 'Student Management System';
-
-// Get the logged-in user so we can show their name in the nav
-$user = current_user();
+$username = $_SESSION['username'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($pageTitle) ?></title>
+    <title><?php echo e($pageTitle); ?></title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
-<!-- Top nav bar -->
 <header class="topbar">
     <div class="brand"><a href="dashboard.php">SMS Admin</a></div>
 
-    <?php if ($user): ?>
-    <!-- Only show menu when someone is logged in -->
+    <?php if ($username != ''): ?>
     <nav class="nav">
         <a href="dashboard.php">Dashboard</a>
         <a href="view_students.php">Students</a>
@@ -34,7 +25,7 @@ $user = current_user();
         <a href="attendance.php">Attendance</a>
         <a href="view_attendance.php">Records</a>
         <a href="report.php" target="_blank">PDF Report</a>
-        <span class="nav-user">Hi, <?= e($user['username']) ?></span>
+        <span class="nav-user">Hi, <?php echo e($username); ?></span>
         <a class="btn-logout" href="logout.php">Logout</a>
     </nav>
     <?php endif; ?>
@@ -43,12 +34,13 @@ $user = current_user();
 <main class="container">
 
 <?php
-// Show any flash messages (set right before a redirect happens).
-// flash_get() returns the message AND removes it, so it only shows once.
+// Show success / error message from the session (if any), then clear it
+if (!empty($_SESSION['success'])) {
+    echo '<div class="alert alert-success">' . e($_SESSION['success']) . '</div>';
+    unset($_SESSION['success']);
+}
+if (!empty($_SESSION['error'])) {
+    echo '<div class="alert alert-error">' . e($_SESSION['error']) . '</div>';
+    unset($_SESSION['error']);
+}
 ?>
-<?php if ($msg = flash_get('success')): ?>
-    <div class="alert alert-success"><?= e($msg) ?></div>
-<?php endif; ?>
-<?php if ($msg = flash_get('error')): ?>
-    <div class="alert alert-error"><?= e($msg) ?></div>
-<?php endif; ?>

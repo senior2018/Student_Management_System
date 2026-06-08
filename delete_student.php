@@ -1,44 +1,48 @@
 <?php
-// Delete Student page (the D in CRUD = Delete).
-// Only accepts POST (with a CSRF token) — so the delete URL can't be
-// triggered by accident or by a malicious link.
+// Delete Student (the D in CRUD = Delete).
+// Only accepts POST (so the URL can't be triggered by accident).
 
-require_once __DIR__ . '/includes/auth.php';
-require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/helpers.php';
+require "includes/auth.php";
 require_login();
+require "includes/db.php";
 
-// If somebody opens this URL with a GET, just send them back.
-// Deletes only happen via the form on view_students.php (POST).
+// Reject anything that isn't a POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: view_students.php');
+    header("Location: view_students.php");
     exit;
 }
 
-// Check CSRF token (stops fake delete requests from other websites)
-csrf_verify();
+// Check CSRF token (stops fake delete requests)
+csrf_check();
 
-// (int) makes sure it's a number — even garbage becomes 0
+// Get the id. (int) makes sure it's a number.
 $id = (int) ($_POST['id'] ?? 0);
 
 if ($id <= 0) {
-    flash_set('error', 'Invalid student ID.');
-    header('Location: view_students.php');
+    $_SESSION['error'] = "Invalid student ID.";
+    header("Location: view_students.php");
     exit;
 }
 
-// Delete the student.
-// The attendance + grades tables have ON DELETE CASCADE, so the
-// student's attendance and grades will be removed automatically.
-$stmt = db()->prepare('DELETE FROM students WHERE id = :id');
+// Get the student so we can also delete their photo file
+$stmt = $pdo->prepare("SELECT photo FROM students WHERE id = :id");
 $stmt->execute([':id' => $id]);
+$student = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// rowCount tells us how many rows got deleted
-if ($stmt->rowCount() > 0) {
-    flash_set('success', 'Student deleted.');
+if ($student) {
+    // Delete the photo file (if any)
+    if (!empty($student['photo']) && file_exists("uploads/" . $student['photo'])) {
+        unlink("uploads/" . $student['photo']);
+    }
+
+    // Delete the student (attendance + grades cascade automatically)
+    $stmt = $pdo->prepare("DELETE FROM students WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+
+    $_SESSION['success'] = "Student deleted.";
 } else {
-    flash_set('error', 'Student not found or already deleted.');
+    $_SESSION['error'] = "Student not found.";
 }
 
-header('Location: view_students.php');
+header("Location: view_students.php");
 exit;

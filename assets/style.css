@@ -102,6 +102,37 @@ h1, h2, h3 { margin-top: 0; }
 .btn-sm { padding: 4px 10px; font-size: 0.85rem; }
 .btn-grades { background: #16a34a; }   /* green so it stands out from Edit/Delete */
 .btn-grades:hover { background: #15803d; }
+
+/* ===== Small utility classes (replace inline style="") ===== */
+.text-muted { color: #64748b; }                                /* light grey hint text */
+.text-faint { color: #94a3b8; }                                /* fainter placeholder */
+.inline-form { display: inline; }                              /* keep delete form on one line */
+.btn-right { margin-left: auto; }                              /* push button to the right */
+.radio-option { margin-right: 10px; }                          /* space between radio buttons */
+.submit-row { margin-top: 16px; }                              /* space above a submit button */
+.searchbar label { align-self: center; }                       /* line labels up with date inputs */
+
+/* Student photo styles */
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.photo-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* GPA classification text next to the GPA number */
+.gpa-class {
+    font-weight: normal;
+    color: #64748b;
+}
 table {
     width: 100%;
     border-collapse: collapse;
